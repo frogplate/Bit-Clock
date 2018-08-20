@@ -1,12 +1,15 @@
 from microbit import *
 
 BIT_BRIGHT = 9
+BACK_BRIGHT = 3
+SECS_BRIGHT = 6
 
 display.clear()
 start_time = running_time()
 base_hrs = 12
 base_mins = 34
-last = -1
+last_min = -1
+last_sec = -1
 
 def display_binary(col, value):
     
@@ -22,13 +25,24 @@ def display_binary(col, value):
     if value in [8, 9]:
         display.set_pixel(col, 0, BIT_BRIGHT)
 
-def refresh_display(hrs_tens, hrs_units, min_tens, min_units):
+def draw_background():
     display.clear()
+    for x in range(5):
+        display.set_pixel(x, 4, BACK_BRIGHT)
+
+def refresh_display(hrs_tens, hrs_units, min_tens, min_units):
+    draw_background()
     display_binary(0, hrs_tens)
     display_binary(1, hrs_units)
     display_binary(3, min_tens)
     display_binary(4, min_units)
-    
+
+def invert_secs():
+    if display.get_pixel(2, 2) > 0:
+        display.set_pixel(2, 2, 0)
+    else:
+        display.set_pixel(2, 2, SECS_BRIGHT)
+        
 while True:
     
     # Button A increments the hours
@@ -36,14 +50,16 @@ while True:
         base_hrs = base_hrs + 1
         if base_hrs > 23:
             base_hrs = 0
-        last = -1
+        # Force display update
+        last_min = -1
 
     # Button B increments the minutes
     if button_b.was_pressed():
         base_mins = base_mins + 1
         if base_mins > 59:
             base_mins = 0
-        last = -1
+        # Force display update
+        last_min = -1
         
     run_secs = int((running_time() - start_time) / 1000)
 
@@ -57,6 +73,10 @@ while True:
     min_tens  = int(run_mins / 10)
     min_units = run_mins - 10 * min_tens
 
-    if last != min_units:  
+    if last_min != min_units:  
         refresh_display(hrs_tens, hrs_units, min_tens, min_units)
-        last = min_units
+        last_min = min_units
+
+    if last_sec != run_secs:
+        invert_secs()
+        last_sec = run_secs
